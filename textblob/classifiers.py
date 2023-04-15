@@ -63,12 +63,14 @@ def _get_words_from_dataset(dataset):
     return set(all_words)
 
 def _get_document_tokens(document):
-    if isinstance(document, basestring):
-        tokens = set((strip_punc(w, all=False)
-                    for w in word_tokenize(document, include_punc=False)))
-    else:
-        tokens = set(strip_punc(w, all=False) for w in document)
-    return tokens
+    return (
+        {
+            strip_punc(w, all=False)
+            for w in word_tokenize(document, include_punc=False)
+        }
+        if isinstance(document, basestring)
+        else {strip_punc(w, all=False) for w in document}
+    )
 
 def basic_extractor(document, train_set):
     """A basic document feature extractor that returns a dict indicating
@@ -84,7 +86,7 @@ def basic_extractor(document, train_set):
     except StopIteration:
         return {}
     if isinstance(el_zero, basestring):
-        word_features = [w for w in chain([el_zero], train_set)]
+        word_features = list(chain([el_zero], train_set))
     else:
         try:
             assert(isinstance(el_zero[0], basestring))
@@ -93,9 +95,9 @@ def basic_extractor(document, train_set):
             raise ValueError('train_set is probably malformed.')
 
     tokens = _get_document_tokens(document)
-    features = dict(((u'contains({0})'.format(word), (word in tokens))
-                                            for word in word_features))
-    return features
+    return {
+        u'contains({0})'.format(word): word in tokens for word in word_features
+    }
 
 
 def contains_extractor(document):
@@ -103,8 +105,7 @@ def contains_extractor(document):
     the document contains.
     """
     tokens = _get_document_tokens(document)
-    features = dict((u'contains({0})'.format(w), True) for w in tokens)
-    return features
+    return {u'contains({0})'.format(w): True for w in tokens}
 
 ##### CLASSIFIERS #####
 

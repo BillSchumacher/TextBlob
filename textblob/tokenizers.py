@@ -67,8 +67,9 @@ def word_tokenize(text, include_punc=True, *args, **kwargs):
     NOTE: NLTK's word tokenizer expects sentences as input, so the text will be
     tokenized to sentences before being tokenized to words.
     """
-    words = chain.from_iterable(
-        _word_tokenizer.itokenize(sentence, include_punc=include_punc,
-                                *args, **kwargs)
-        for sentence in sent_tokenize(text))
-    return words
+    return chain.from_iterable(
+        _word_tokenizer.itokenize(
+            sentence, include_punc=include_punc, *args, **kwargs
+        )
+        for sentence in sent_tokenize(text)
+    )

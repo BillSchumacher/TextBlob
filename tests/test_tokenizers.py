@@ -8,10 +8,7 @@ from textblob.compat import PY2
 
 
 def is_generator(obj):
-    if PY2:
-        return hasattr(obj, 'next')
-    else:
-        return hasattr(obj, '__next__')
+    return hasattr(obj, 'next') if PY2 else hasattr(obj, '__next__')
 
 
 class TestWordTokenizer(unittest.TestCase):

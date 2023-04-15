@@ -55,9 +55,7 @@ def _penn_to_wordnet(tag):
         return _wordnet.ADJ
     if tag in ("VB", "VBD", "VBG", "VBN", "VBP", "VBZ"):
         return _wordnet.VERB
-    if tag in ("RB", "RBR", "RBS"):
-        return _wordnet.ADV
-    return None
+    return _wordnet.ADV if tag in ("RB", "RBR", "RBS") else None
 
 class Word(unicode):
 
@@ -244,10 +242,7 @@ class WordList(list):
     def __getitem__(self, key):
         """Returns a string at the given index."""
         item = super(WordList, self).__getitem__(key)
-        if isinstance(key, slice):
-            return self.__class__(item)
-        else:
-            return item
+        return self.__class__(item) if isinstance(key, slice) else item
 
     def __getslice__(self, i, j):
         # This is included for Python 2.* compatibility
@@ -268,10 +263,13 @@ class WordList(list):
         :param strg: The string to count.
         :param case_sensitive: A boolean, whether or not the search is case-sensitive.
         """
-        if not case_sensitive:
-            return [word.lower() for word in self].count(strg.lower(), *args,
-                    **kwargs)
-        return super(WordList, self).count(strg, *args, **kwargs)
+        return (
+            super(WordList, self).count(strg, *args, **kwargs)
+            if case_sensitive
+            else [word.lower() for word in self].count(
+                strg.lower(), *args, **kwargs
+            )
+        )
 
     def append(self, obj):
         """Append an object to end. If the object is a string, appends a
@@ -323,11 +321,11 @@ def _validated_param(obj, name, base_class, default, base_class_name=None):
     :param base_class: The class that obj must inherit from.
     :param default: The default object to fall back upon if obj is None.
     """
+    if obj is None or isinstance(obj, base_class):
+        return obj or default
     base_class_name = base_class_name if base_class_name else base_class.__name__
-    if obj is not None and not isinstance(obj, base_class):
-        raise ValueError('{name} must be an instance of {cls}'
-                         .format(name=name, cls=base_class_name))
-    return obj or default
+    raise ValueError('{name} must be an instance of {cls}'
+                     .format(name=name, cls=base_class_name))
 
 
 def _initialize_models(obj, tokenizer, pos_tagger,
@@ -531,9 +529,9 @@ class BaseBlob(StringlikeMixin, BlobComparableMixin):
         """
         if n <= 0:
             return []
-        grams = [WordList(self.words[i:i + n])
-                            for i in range(len(self.words) - n + 1)]
-        return grams
+        return [
+            WordList(self.words[i : i + n]) for i in range(len(self.words) - n + 1)
+        ]
 
     def translate(self, from_lang="auto", to="en"):
         """Translate the blob to another language.
@@ -811,10 +809,14 @@ class Blobber(object):
                         classifier=self.classifier)
 
     def __repr__(self):
-        classifier_name = self.classifier.__class__.__name__ + "()" if self.classifier else "None"
+        classifier_name = (
+            f"{self.classifier.__class__.__name__}()"
+            if self.classifier
+            else "None"
+        )
         return ("Blobber(tokenizer={0}(), pos_tagger={1}(), "
                     "np_extractor={2}(), analyzer={3}(), parser={4}(), classifier={5})")\
-                    .format(self.tokenizer.__class__.__name__,
+                        .format(self.tokenizer.__class__.__name__,
                             self.pos_tagger.__class__.__name__,
                             self.np_extractor.__class__.__name__,
                             self.analyzer.__class__.__name__,

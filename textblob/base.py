@@ -61,7 +61,7 @@ class BaseTokenizer(with_metaclass(ABCMeta), nltk.tokenize.api.TokenizerI):
 
         :rtype: generator
         """
-        return (t for t in self.tokenize(text, *args, **kwargs))
+        return iter(self.tokenize(text, *args, **kwargs))
 
 ##### SENTIMENT ANALYZERS ####
 

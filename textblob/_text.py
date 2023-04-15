@@ -172,7 +172,7 @@ def penntreebank2universal(token, tag):
     """ Returns a (token, tag)-tuple with a simplified universal part-of-speech tag.
     """
     if tag.startswith(("NNP-", "NNPS-")):
-        return (token, "%s-%s" % (NOUN, tag.split("-")[-1]))
+        return token, f'{NOUN}-{tag.split("-")[-1]}'
     if tag in ("NN", "NNS", "NNP", "NNPS", "NP"):
         return (token, NOUN)
     if tag in ("MD", "VB", "VBD", "VBG", "VBN", "VBP", "VBZ"):
@@ -208,12 +208,45 @@ PUNCTUATION = \
 punctuation = ".,;:!?()[]{}`''\"@#$^&*+-|=~_"
 
 # Handle common abbreviations.
-ABBREVIATIONS = abbreviations = set((
-    "a.", "adj.", "adv.", "al.", "a.m.", "c.", "cf.", "comp.", "conf.", "def.",
-    "ed.", "e.g.", "esp.", "etc.", "ex.", "f.", "fig.", "gen.", "id.", "i.e.",
-    "int.", "l.", "m.", "Med.", "Mil.", "Mr.", "n.", "n.q.", "orig.", "pl.",
-    "pred.", "pres.", "p.m.", "ref.", "v.", "vs.", "w/"
-))
+ABBREVIATIONS = abbreviations = {
+    "a.",
+    "adj.",
+    "adv.",
+    "al.",
+    "a.m.",
+    "c.",
+    "cf.",
+    "comp.",
+    "conf.",
+    "def.",
+    "ed.",
+    "e.g.",
+    "esp.",
+    "etc.",
+    "ex.",
+    "f.",
+    "fig.",
+    "gen.",
+    "id.",
+    "i.e.",
+    "int.",
+    "l.",
+    "m.",
+    "Med.",
+    "Mil.",
+    "Mr.",
+    "n.",
+    "n.q.",
+    "orig.",
+    "pl.",
+    "pred.",
+    "pres.",
+    "p.m.",
+    "ref.",
+    "v.",
+    "vs.",
+    "w/",
+}
 
 RE_ABBR1 = re.compile("^[A-Za-z]\.$")       # single letter, "T. De Smedt"
 RE_ABBR2 = re.compile("^([A-Za-z]\.)+$")    # alternating letters, "U.S."
@@ -221,16 +254,94 @@ RE_ABBR3 = re.compile("^[A-Z][" + "|".join( # capital followed by consonants, "M
         "bcdfghjklmnpqrstvwxz") + "]+.$")
 
 # Handle emoticons.
-EMOTICONS = { # (facial expression, sentiment)-keys
-    ("love" , +1.00): set(("<3", "♥")),
-    ("grin" , +1.00): set((">:D", ":-D", ":D", "=-D", "=D", "X-D", "x-D", "XD", "xD", "8-D")),
-    ("taunt", +0.75): set((">:P", ":-P", ":P", ":-p", ":p", ":-b", ":b", ":c)", ":o)", ":^)")),
-    ("smile", +0.50): set((">:)", ":-)", ":)", "=)", "=]", ":]", ":}", ":>", ":3", "8)", "8-)")),
-    ("wink" , +0.25): set((">;]", ";-)", ";)", ";-]", ";]", ";D", ";^)", "*-)", "*)")),
-    ("gasp" , +0.05): set((">:o", ":-O", ":O", ":o", ":-o", "o_O", "o.O", "°O°", "°o°")),
-    ("worry", -0.25): set((">:/",  ":-/", ":/", ":\\", ">:\\", ":-.", ":-s", ":s", ":S", ":-S", ">.>")),
-    ("frown", -0.75): set((">:[", ":-(", ":(", "=(", ":-[", ":[", ":{", ":-<", ":c", ":-c", "=/")),
-    ("cry"  , -1.00): set((":'(", ":'''(", ";'("))
+EMOTICONS = {
+    ("love", +1.00): {"<3", "♥"},
+    ("grin", +1.00): {
+        ">:D",
+        ":-D",
+        ":D",
+        "=-D",
+        "=D",
+        "X-D",
+        "x-D",
+        "XD",
+        "xD",
+        "8-D",
+    },
+    ("taunt", +0.75): {
+        ">:P",
+        ":-P",
+        ":P",
+        ":-p",
+        ":p",
+        ":-b",
+        ":b",
+        ":c)",
+        ":o)",
+        ":^)",
+    },
+    ("smile", +0.50): {
+        ">:)",
+        ":-)",
+        ":)",
+        "=)",
+        "=]",
+        ":]",
+        ":}",
+        ":>",
+        ":3",
+        "8)",
+        "8-)",
+    },
+    ("wink", +0.25): {
+        ">;]",
+        ";-)",
+        ";)",
+        ";-]",
+        ";]",
+        ";D",
+        ";^)",
+        "*-)",
+        "*)",
+    },
+    ("gasp", +0.05): {
+        ">:o",
+        ":-O",
+        ":O",
+        ":o",
+        ":-o",
+        "o_O",
+        "o.O",
+        "°O°",
+        "°o°",
+    },
+    ("worry", -0.25): {
+        ">:/",
+        ":-/",
+        ":/",
+        ":\\",
+        ">:\\",
+        ":-.",
+        ":-s",
+        ":s",
+        ":S",
+        ":-S",
+        ">.>",
+    },
+    ("frown", -0.75): {
+        ">:[",
+        ":-(",
+        ":(",
+        "=(",
+        ":-[",
+        ":[",
+        ":{",
+        ":-<",
+        ":c",
+        ":-c",
+        "=/",
+    },
+    ("cry", -1.00): {":'(", ":'''(", ";'("},
 }
 
 RE_EMOTICONS = [r" ?".join([re.escape(each) for each in e]) for v in EMOTICONS.values() for e in v]
@@ -274,19 +385,17 @@ def find_tokens(string, punctuation=PUNCTUATION, abbreviations=ABBREVIATIONS, re
                                 .replace('"', ' " ')
     # Collapse whitespace.
     string = re.sub("\r\n", "\n", string)
-    string = re.sub(linebreak, " %s " % EOS, string)
+    string = re.sub(linebreak, f" {EOS} ", string)
     string = re.sub(r"\s+", " ", string)
     tokens = []
-    for t in TOKEN.findall(string+" "):
+    for t in TOKEN.findall(f"{string} "):
         if len(t) > 0:
             tail = []
-            while t.startswith(punctuation) and \
-              not t in replace:
+            while t.startswith(punctuation) and t not in replace:
                 # Split leading punctuation.
                 if t.startswith(punctuation):
                     tokens.append(t[0]); t=t[1:]
-            while t.endswith(punctuation+(".",)) and \
-              not t in replace:
+            while t.endswith(punctuation + (".",)) and t not in replace:
                 # Split trailing punctuation.
                 if t.endswith(punctuation):
                     tail.append(t[-1]); t=t[:-1]
@@ -300,8 +409,8 @@ def find_tokens(string, punctuation=PUNCTUATION, abbreviations=ABBREVIATIONS, re
                       RE_ABBR2.match(t) is not None or \
                       RE_ABBR3.match(t) is not None:
                         break
-                    else:
-                        tail.append(t[-1]); t=t[:-1]
+                    tail.append(t[-1])
+                    t=t[:-1]
             if t != "":
                 tokens.append(t)
             tokens.extend(reversed(tail))
@@ -309,10 +418,15 @@ def find_tokens(string, punctuation=PUNCTUATION, abbreviations=ABBREVIATIONS, re
     while j < len(tokens):
         if tokens[j] in ("...", ".", "!", "?", EOS):
             # Handle citations, trailing parenthesis, repeated punctuation (!?).
-            while j < len(tokens) \
-                    and tokens[j] in ("'", "\"", u"”", u"’", "...", ".", "!", "?", ")", EOS):
-                if tokens[j] in ("'", "\"") and sentences[-1].count(tokens[j]) % 2 == 0:
-                    break  # Balanced quotes.
+            while (
+                j < len(tokens)
+                and tokens[j]
+                in ("'", "\"", u"”", u"’", "...", ".", "!", "?", ")", EOS)
+                and (
+                    tokens[j] not in ("'", "\"")
+                    or sentences[-1].count(tokens[j]) % 2 != 0
+                )
+            ):
                 j += 1
             sentences[-1].extend(t for t in tokens[i:j] if t != EOS)
             sentences.append([])
@@ -421,7 +535,7 @@ class Morphology(lazylist, Rules):
           "goodright", # Word followed by word x.
         )
         cmd = dict.fromkeys(cmd, True)
-        cmd.update(("f" + k, v) for k, v in list(cmd.items()))
+        cmd.update((f"f{k}", v) for k, v in list(cmd.items()))
         Rules.__init__(self, lexicon, cmd)
         self._path = path
 
@@ -537,35 +651,35 @@ class Context(lazylist, Rules):
             for r in self:
                 if token[1] == "STAART":
                     continue
-                if token[1] != r[0] and r[0] != "*":
+                if token[1] != r[0] != "*":
                     continue
                 cmd, x, y = r[2], r[3], r[4] if len(r) > 4 else ""
                 cmd = cmd.lower()
                 if (cmd == "prevtag"        and x ==  t[i-1][1]) \
-                or (cmd == "nexttag"        and x ==  t[i+1][1]) \
-                or (cmd == "prev2tag"       and x ==  t[i-2][1]) \
-                or (cmd == "next2tag"       and x ==  t[i+2][1]) \
-                or (cmd == "prev1or2tag"    and x in (t[i-1][1], t[i-2][1])) \
-                or (cmd == "next1or2tag"    and x in (t[i+1][1], t[i+2][1])) \
-                or (cmd == "prev1or2or3tag" and x in (t[i-1][1], t[i-2][1], t[i-3][1])) \
-                or (cmd == "next1or2or3tag" and x in (t[i+1][1], t[i+2][1], t[i+3][1])) \
-                or (cmd == "surroundtag"    and x ==  t[i-1][1] and y == t[i+1][1]) \
-                or (cmd == "curwd"          and x ==  t[i+0][0]) \
-                or (cmd == "prevwd"         and x ==  t[i-1][0]) \
-                or (cmd == "nextwd"         and x ==  t[i+1][0]) \
-                or (cmd == "prev1or2wd"     and x in (t[i-1][0], t[i-2][0])) \
-                or (cmd == "next1or2wd"     and x in (t[i+1][0], t[i+2][0])) \
-                or (cmd == "prevwdtag"      and x ==  t[i-1][0] and y == t[i-1][1]) \
-                or (cmd == "nextwdtag"      and x ==  t[i+1][0] and y == t[i+1][1]) \
-                or (cmd == "wdprevtag"      and x ==  t[i-1][1] and y == t[i+0][0]) \
-                or (cmd == "wdnexttag"      and x ==  t[i+0][0] and y == t[i+1][1]) \
-                or (cmd == "wdand2aft"      and x ==  t[i+0][0] and y == t[i+2][0]) \
-                or (cmd == "wdand2tagbfr"   and x ==  t[i-2][1] and y == t[i+0][0]) \
-                or (cmd == "wdand2tagaft"   and x ==  t[i+0][0] and y == t[i+2][1]) \
-                or (cmd == "lbigram"        and x ==  t[i-1][0] and y == t[i+0][0]) \
-                or (cmd == "rbigram"        and x ==  t[i+0][0] and y == t[i+1][0]) \
-                or (cmd == "prevbigram"     and x ==  t[i-2][1] and y == t[i-1][1]) \
-                or (cmd == "nextbigram"     and x ==  t[i+1][1] and y == t[i+2][1]):
+                    or (cmd == "nexttag"        and x ==  t[i+1][1]) \
+                    or (cmd == "prev2tag"       and x ==  t[i-2][1]) \
+                    or (cmd == "next2tag"       and x ==  t[i+2][1]) \
+                    or (cmd == "prev1or2tag"    and x in (t[i-1][1], t[i-2][1])) \
+                    or (cmd == "next1or2tag"    and x in (t[i+1][1], t[i+2][1])) \
+                    or (cmd == "prev1or2or3tag" and x in (t[i-1][1], t[i-2][1], t[i-3][1])) \
+                    or (cmd == "next1or2or3tag" and x in (t[i+1][1], t[i+2][1], t[i+3][1])) \
+                    or (cmd == "surroundtag"    and x ==  t[i-1][1] and y == t[i+1][1]) \
+                    or (cmd == "curwd"          and x ==  t[i+0][0]) \
+                    or (cmd == "prevwd"         and x ==  t[i-1][0]) \
+                    or (cmd == "nextwd"         and x ==  t[i+1][0]) \
+                    or (cmd == "prev1or2wd"     and x in (t[i-1][0], t[i-2][0])) \
+                    or (cmd == "next1or2wd"     and x in (t[i+1][0], t[i+2][0])) \
+                    or (cmd == "prevwdtag"      and x ==  t[i-1][0] and y == t[i-1][1]) \
+                    or (cmd == "nextwdtag"      and x ==  t[i+1][0] and y == t[i+1][1]) \
+                    or (cmd == "wdprevtag"      and x ==  t[i-1][1] and y == t[i+0][0]) \
+                    or (cmd == "wdnexttag"      and x ==  t[i+0][0] and y == t[i+1][1]) \
+                    or (cmd == "wdand2aft"      and x ==  t[i+0][0] and y == t[i+2][0]) \
+                    or (cmd == "wdand2tagbfr"   and x ==  t[i-2][1] and y == t[i+0][0]) \
+                    or (cmd == "wdand2tagaft"   and x ==  t[i+0][0] and y == t[i+2][1]) \
+                    or (cmd == "lbigram"        and x ==  t[i-1][0] and y == t[i+0][0]) \
+                    or (cmd == "rbigram"        and x ==  t[i+0][0] and y == t[i+1][0]) \
+                    or (cmd == "prevbigram"     and x ==  t[i-2][1] and y == t[i-1][1]) \
+                    or (cmd == "nextbigram"     and x ==  t[i+1][1] and y == t[i+2][1]):
                     t[i] = [t[i][0], r[1]]
         return t[len(o):-len(o)]
 
@@ -627,13 +741,13 @@ class Entities(lazydict, Rules):
         while i < len(tokens):
             w = tokens[i][0].lower()
             if RE_ENTITY1.match(w) \
-            or RE_ENTITY2.match(w) \
-            or RE_ENTITY3.match(w):
+                or RE_ENTITY2.match(w) \
+                or RE_ENTITY3.match(w):
                 tokens[i][1] = self.tag
             if w in self:
                 for e in self[w]:
                     # Look ahead to see if successive words match the named entity.
-                    e, tag = (e[:-1], "-"+e[-1].upper()) if e[-1] in self.cmd else (e, "")
+                    e, tag = (e[:-1], f"-{e[-1].upper()}") if e[-1] in self.cmd else (e, "")
                     b = True
                     for j, e in enumerate(e):
                         if i + j >= len(tokens) or tokens[i+j][0].lower() != e:
@@ -690,10 +804,10 @@ def avg(list):
 
 class Score(tuple):
 
-    def __new__(self, polarity, subjectivity, assessments=[]):
+    def __new__(cls, polarity, subjectivity, assessments=[]):
         """ A (polarity, subjectivity)-tuple with an assessments property.
         """
-        return tuple.__new__(self, [polarity, subjectivity])
+        return tuple.__new__(cls, [polarity, subjectivity])
 
     def __init__(self, polarity, subjectivity, assessments=[]):
         self.assessments = assessments
@@ -744,7 +858,7 @@ class Sentiment(lazydict):
         xml = xml.getroot()
         for w in xml.findall("word"):
             if self._confidence is None \
-            or self._confidence <= float(w.attrib.get("confidence", 0.0)):
+                or self._confidence <= float(w.attrib.get("confidence", 0.0)):
                 w, pos, p, s, i, label, synset = (
                     w.attrib.get("form"),
                     w.attrib.get("pos"),
@@ -764,7 +878,10 @@ class Sentiment(lazydict):
         self._language = xml.attrib.get("language", self._language)
         # Average scores of all word senses per part-of-speech tag.
         for w in words:
-            words[w] = dict((pos, [avg(each) for each in zip(*psi)]) for pos, psi in words[w].items())
+            words[w] = {
+                pos: [avg(each) for each in zip(*psi)]
+                for pos, psi in words[w].items()
+            }
         # Average scores of all part-of-speech tags.
         for w, pos in list(words.items()):
             words[w][None] = [avg(each) for each in zip(*pos.values())]
@@ -783,13 +900,13 @@ class Sentiment(lazydict):
         id = str(id).zfill(8)
         if not id.startswith(("n-", "v-", "a-", "r-")):
             if pos == NOUN:
-                id = "n-" + id
+                id = f"n-{id}"
             if pos == VERB:
-                id = "v-" + id
+                id = f"v-{id}"
             if pos == ADJECTIVE:
-                id = "a-" + id
+                id = f"a-{id}"
             if pos == ADVERB:
-                id = "r-" + id
+                id = f"r-{id}"
         if dict.__len__(self) == 0:
             self.load()
         return tuple(self._synsets.get(id, (0.0, 0.0))[:2])
@@ -906,7 +1023,7 @@ class Sentiment(lazydict):
                 elif m and len(w) > 2:
                     m = None
                 # Exclamation marks boost previous word.
-                if w == "!" and len(a) > 0:
+                if w == "!" and a:
                     a[-1]["w"].append("!")
                     a[-1]["p"] = max(-1.0, min(a[-1]["p"] * 1.25, +1.0))
                 # Exclamation marks in parentheses indicate sarcasm.
@@ -973,10 +1090,13 @@ def find_tags(tokens, lexicon={}, model=None, morphology=None, context=None, ent
         If a model is given, uses model for unknown words instead of morphology and context.
         If map is a function, it is applied to each (token, tag) after applying all rules.
     """
-    tagged = []
-    # Tag known words.
-    for i, token in enumerate(tokens):
-        tagged.append([token, lexicon.get(token, i == 0 and lexicon.get(token.lower()) or None)])
+    tagged = [
+        [
+            token,
+            lexicon.get(token, i == 0 and lexicon.get(token.lower()) or None),
+        ]
+        for i, token in enumerate(tokens)
+    ]
     # Tag unknown words.
     for i, (token, tag) in enumerate(tagged):
         prev, next = (None, None), (None, None)
@@ -1026,23 +1146,34 @@ RB = r"(?<!W)RB|RBR|RBS"
 # Chunking rules.
 # CHUNKS[0] = Germanic: RB + JJ precedes NN ("the round table").
 # CHUNKS[1] = Romance: RB + JJ precedes or follows NN ("la table ronde", "une jolie fille").
-CHUNKS = [[
-    # Germanic languages: en, de, nl, ...
-    (  "NP", re.compile(r"(("+NN+")/)*((DT|CD|CC|CJ)/)*(("+RB+"|"+JJ+")/)*(("+NN+")/)+")),
-    (  "VP", re.compile(r"(((MD|"+RB+")/)*(("+VB+")/)+)+")),
-    (  "VP", re.compile(r"((MD)/)")),
-    (  "PP", re.compile(r"((IN|PP|TO)/)+")),
-    ("ADJP", re.compile(r"((CC|CJ|"+RB+"|"+JJ+")/)*(("+JJ+")/)+")),
-    ("ADVP", re.compile(r"(("+RB+"|WRB)/)+")),
-], [
-    # Romance languages: es, fr, it, ...
-    (  "NP", re.compile(r"(("+NN+")/)*((DT|CD|CC|CJ)/)*(("+RB+"|"+JJ+")/)*(("+NN+")/)+(("+RB+"|"+JJ+")/)*")),
-    (  "VP", re.compile(r"(((MD|"+RB+")/)*(("+VB+")/)+(("+RB+")/)*)+")),
-    (  "VP", re.compile(r"((MD)/)")),
-    (  "PP", re.compile(r"((IN|PP|TO)/)+")),
-    ("ADJP", re.compile(r"((CC|CJ|"+RB+"|"+JJ+")/)*(("+JJ+")/)+")),
-    ("ADVP", re.compile(r"(("+RB+"|WRB)/)+")),
-]]
+CHUNKS = [
+    [
+        (
+            "NP",
+            re.compile(
+                f"(({NN})/)*((DT|CD|CC|CJ)/)*(({RB}|{JJ})/)*(({NN})/)+"
+            ),
+        ),
+        ("VP", re.compile(f"(((MD|{RB})/)*(({VB})/)+)+")),
+        ("VP", re.compile(r"((MD)/)")),
+        ("PP", re.compile(r"((IN|PP|TO)/)+")),
+        ("ADJP", re.compile(f"((CC|CJ|{RB}|{JJ})/)*(({JJ})/)+")),
+        ("ADVP", re.compile(f"(({RB}|WRB)/)+")),
+    ],
+    [
+        (
+            "NP",
+            re.compile(
+                f"(({NN})/)*((DT|CD|CC|CJ)/)*(({RB}|{JJ})/)*(({NN})/)+(({RB}|{JJ})/)*"
+            ),
+        ),
+        ("VP", re.compile(f"(((MD|{RB})/)*(({VB})/)+(({RB})/)*)+")),
+        ("VP", re.compile(r"((MD)/)")),
+        ("PP", re.compile(r"((IN|PP|TO)/)+")),
+        ("ADJP", re.compile(f"((CC|CJ|{RB}|{JJ})/)*(({JJ})/)+")),
+        ("ADVP", re.compile(f"(({RB}|WRB)/)+")),
+    ],
+]
 
 # Handle ADJP before VP, so that
 # RB prefers next ADJP over previous VP.
@@ -1055,8 +1186,8 @@ def find_chunks(tagged, language="en"):
         The/DT nice/JJ fish/NN is/VBZ dead/JJ ./. =>
         The/DT/B-NP nice/JJ/I-NP fish/NN/I-NP is/VBZ/B-VP dead/JJ/B-ADJP ././O
     """
-    chunked = [x for x in tagged]
-    tags = "".join("%s%s" % (tag, SEPARATOR) for token, tag in tagged)
+    chunked = list(tagged)
+    tags = "".join(f"{tag}{SEPARATOR}" for token, tag in tagged)
     # Use Germanic or Romance chunking rules according to given language.
     for tag, rule in CHUNKS[int(language in ("ca", "es", "pt", "fr", "it", "pt", "ro"))]:
         for m in rule.finditer(tags):
@@ -1072,22 +1203,23 @@ def find_chunks(tagged, language="en"):
                     # A conjunction can not be start of a chunk.
                     if k == j and chunked[k][1] in ("CC", "CJ", "KON", "Conj(neven)"):
                         j += 1
-                    # Mark first token in chunk with B-.
                     elif k == j:
-                        chunked[k].append("B-"+tag)
-                    # Mark other tokens in chunk with I-.
+                        chunked[k].append(f"B-{tag}")
                     else:
-                        chunked[k].append("I-"+tag)
+                        chunked[k].append(f"I-{tag}")
     # Mark chinks (tokens outside of a chunk) with O-.
     for chink in filter(lambda x: len(x) < 3, chunked):
         chink.append("O")
     # Post-processing corrections.
     for i, (word, tag, chunk) in enumerate(chunked):
-        if tag.startswith("RB") and chunk == "B-NP":
-            # "Very nice work" (NP) <=> "Perhaps" (ADVP) + "you" (NP).
-            if i < len(chunked)-1 and not chunked[i+1][1].startswith("JJ"):
-                chunked[i+0][2] = "B-ADVP"
-                chunked[i+1][2] = "B-NP"
+        if (
+            tag.startswith("RB")
+            and chunk == "B-NP"
+            and i < len(chunked) - 1
+            and not chunked[i + 1][1].startswith("JJ")
+        ):
+            chunked[i+0][2] = "B-ADVP"
+            chunked[i+1][2] = "B-NP"
     return chunked
 
 def find_prepositions(chunked):
@@ -1099,21 +1231,25 @@ def find_prepositions(chunked):
     for ch in chunked:
         ch.append("O")
     for i, chunk in enumerate(chunked):
-        if chunk[2].endswith("PP") and chunk[-1] == "O":
-            # Find PP followed by other PP, NP with nouns and pronouns, VP with a gerund.
-            if i < len(chunked)-1 and \
-             (chunked[i+1][2].endswith(("NP", "PP")) or \
-              chunked[i+1][1] in ("VBG", "VBN")):
-                chunk[-1] = "B-PNP"
-                pp = True
-                for ch in chunked[i+1:]:
-                    if not (ch[2].endswith(("NP", "PP")) or ch[1] in ("VBG", "VBN")):
-                        break
-                    if ch[2].endswith("PP") and pp:
-                        ch[-1] = "I-PNP"
-                    if not ch[2].endswith("PP"):
-                        ch[-1] = "I-PNP"
-                        pp = False
+        if (
+            chunk[2].endswith("PP")
+            and chunk[-1] == "O"
+            and i < len(chunked) - 1
+            and (
+                chunked[i + 1][2].endswith(("NP", "PP"))
+                or chunked[i + 1][1] in ("VBG", "VBN")
+            )
+        ):
+            chunk[-1] = "B-PNP"
+            pp = True
+            for ch in chunked[i+1:]:
+                if not (ch[2].endswith(("NP", "PP")) or ch[1] in ("VBG", "VBN")):
+                    break
+                if ch[2].endswith("PP") and pp:
+                    ch[-1] = "I-PNP"
+                if not ch[2].endswith("PP"):
+                    ch[-1] = "I-PNP"
+                    pp = False
     return chunked
 
 #### PARSER ########################################################################################
@@ -1254,7 +1390,7 @@ class Parser:
         # With collapse=False (or split=True), returns raw list
         # (this output is not usable by tree.Text).
         if not kwargs.get("collapse", True) \
-            or kwargs.get("split", False):
+                or kwargs.get("split", False):
             return s
         # Construct TaggedString.format.
         # (this output is usable by tree.Text).
@@ -1276,8 +1412,9 @@ class Parser:
                 s[i][j] = "/".join(s[i][j])
             s[i] = " ".join(s[i])
         s = "\n".join(s)
-        s = TaggedString(unicode(s), format, language=kwargs.get("language", self.language))
-        return s
+        return TaggedString(
+            unicode(s), format, language=kwargs.get("language", self.language)
+        )
 
 
 #--- TAGGED STRING ---------------------------------------------------------------------------------
@@ -1289,7 +1426,7 @@ TOKENS = "tokens"
 
 class TaggedString(unicode):
 
-    def __new__(self, string, tags=["word"], language=None):
+    def __new__(cls, string, tags=["word"], language=None):
         """ Unicode string with tags and language attributes.
             For example: TaggedString("cat/NN/NP", tags=["word", "pos", "chunk"]).
         """
@@ -1300,7 +1437,7 @@ class TaggedString(unicode):
         if isinstance(string, list):
             string = [[[x.replace("/", "&slash;") for x in token] for token in s] for s in string]
             string = "\n".join(" ".join("/".join(token) for token in s) for s in string)
-        s = unicode.__new__(self, string)
+        s = unicode.__new__(cls, string)
         s.tags = list(tags)
         s.language = language
         return s
@@ -1341,18 +1478,17 @@ class Spelling(lazydict):
         return self._language
 
     @classmethod
-    def train(self, s, path="spelling.txt"):
+    def train(cls, s, path="spelling.txt"):
         """ Counts the words in the given string and saves the probabilities at the given path.
             This can be used to generate a new model for the Spelling() constructor.
         """
         model = {}
         for w in re.findall("[a-z]+", s.lower()):
             model[w] = w in model and model[w] + 1 or 1
-        model = ("%s %s" % (k, v) for k, v in sorted(model.items()))
+        model = (f"{k} {v}" for k, v in sorted(model.items()))
         model = "\n".join(model)
-        f = open(path, "w")
-        f.write(model)
-        f.close()
+        with open(path, "w") as f:
+            f.write(model)
 
     def _edit1(self, w):
         """ Returns a set of words with edit distance 1 from the given word.
@@ -1364,7 +1500,7 @@ class Spelling(lazydict):
             [a + b[1:] for a, b in split if b],
             [a + b[1] + b[0] + b[2:] for a, b in split if len(b) > 1],
             [a + c + b[1:] for a, b in split for c in Spelling.ALPHA if b],
-            [a + c + b[0:] for a, b in split for c in Spelling.ALPHA]
+            [a + c + b[:] for a, b in split for c in Spelling.ALPHA],
         )
         return set(delete + transpose + replace + insert)
 
@@ -1373,12 +1509,12 @@ class Spelling(lazydict):
         """
         # Of all spelling errors, 99% is covered by edit distance 2.
         # Only keep candidates that are actually known words (20% speedup).
-        return set(e2 for e1 in self._edit1(w) for e2 in self._edit1(e1) if e2 in self)
+        return {e2 for e1 in self._edit1(w) for e2 in self._edit1(e1) if e2 in self}
 
     def _known(self, words=[]):
         """ Returns the given list of words filtered by known words.
         """
-        return set(w for w in words if w in self)
+        return {w for w in words if w in self}
 
     def suggest(self, w):
         """ Return a list of (word, confidence) spelling corrections for the given word,
@@ -1395,14 +1531,14 @@ class Spelling(lazydict):
         if w.replace(".", "").isdigit():
             return [(w, 1.0)] # 1.5
         candidates = self._known([w]) \
-                  or self._known(self._edit1(w)) \
-                  or self._known(self._edit2(w)) \
-                  or [w]
+                      or self._known(self._edit1(w)) \
+                      or self._known(self._edit2(w)) \
+                      or [w]
         candidates = [(self.get(c, 0.0), c) for c in candidates]
         s = float(sum(p for p, word in candidates) or 1)
         candidates = sorted(((p / s, word) for p, word in candidates), reverse=True)
-        if w.istitle():  # Preserve capitalization
-            candidates = [(word.title(), p) for p, word in candidates]
-        else:
-            candidates = [(word, p) for p, word in candidates]
-        return candidates
+        return (
+            [(word.title(), p) for p, word in candidates]
+            if w.istitle()
+            else [(word, p) for p, word in candidates]
+        )

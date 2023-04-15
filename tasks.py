@@ -23,7 +23,7 @@ def clean(ctx):
 
 @task
 def clean_docs(ctx):
-    ctx.run("rm -rf %s" % build_dir)
+    ctx.run(f"rm -rf {build_dir}")
 
 
 @task
@@ -35,7 +35,7 @@ def browse_docs(ctx):
 def docs(ctx, clean=False, browse=False):
     if clean:
         clean_docs(ctx)
-    ctx.run("sphinx-build %s %s" % (docs_dir, build_dir), pty=True)
+    ctx.run(f"sphinx-build {docs_dir} {build_dir}", pty=True)
     if browse:
         browse_docs(ctx)
 

@@ -41,11 +41,7 @@ def filter_insignificant(chunk, tag_suffixes=('DT', 'CC', 'PRP$', 'PRP')):
     """Filter out insignificant (word, tag) tuples from a chunk of text."""
     good = []
     for word, tag in chunk:
-        ok = True
-        for suffix in tag_suffixes:
-            if tag.endswith(suffix):
-                ok = False
-                break
+        ok = not any(tag.endswith(suffix) for suffix in tag_suffixes)
         if ok:
             good.append((word, tag))
     return good

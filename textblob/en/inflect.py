@@ -251,11 +251,7 @@ def pluralize(word, pos=NOUN, custom={}, classical=True):
     if word.endswith("'") or word.endswith("'s"):
         owner = word.rstrip("'s")
         owners = pluralize(owner, pos, custom, classical)
-        if owners.endswith("s"):
-            return owners + "'"
-        else:
-            return owners + "'s"
-
+        return f"{owners}'" if owners.endswith("s") else f"{owners}'s"
     # Recursion of compound words
     # (Postmasters General, mothers-in-law, Roman deities).
     words = word.replace("-", " ").split(" ")
@@ -279,15 +275,20 @@ def pluralize(word, pos=NOUN, custom={}, classical=True):
         for rule in ruleset:
             suffix, inflection, category, classic = rule
             # A general rule, or a classic rule in classical mode.
-            if category == None:
-                if not classic or (classic and classical):
-                    if suffix.search(word) is not None:
-                        return suffix.sub(inflection, word)
+            if (
+                category is None
+                and (not classic or classical)
+                and suffix.search(word) is not None
+            ):
+                return suffix.sub(inflection, word)
             # A rule relating to a specific category of words.
-            if category != None:
-                if word in plural_categories[category] and (not classic or (classic and classical)):
-                    if suffix.search(word) is not None:
-                        return suffix.sub(inflection, word)
+            if (
+                category != None
+                and word in plural_categories[category]
+                and (not classic or classical)
+                and suffix.search(word) is not None
+            ):
+                return suffix.sub(inflection, word)
 
 #### SINGULARIZE ###################################################################################
 # Adapted from Bermi Ferrer's Inflector for Python:
@@ -437,10 +438,10 @@ def singularize(word, pos=NOUN, custom={}):
     if "-" in word:
         words = word.split("-")
         if len(words) > 1 and words[1] in plural_prepositions:
-            return singularize(words[0], pos, custom)+"-"+"-".join(words[1:])
+            return f"{singularize(words[0], pos, custom)}-" + "-".join(words[1:])
     # dogs' => dog's
     if word.endswith("'"):
-        return singularize(word[:-1]) + "'s"
+        return f"{singularize(word[:-1])}'s"
 
     lower = word.lower()
     for w in singular_uninflected:
@@ -450,22 +451,21 @@ def singularize(word, pos=NOUN, custom={}):
         if w.endswith(lower):
             return word
     for w in singular_ie:
-        if lower.endswith(w+"s"):
+        if lower.endswith(f"{w}s"):
             return w
     for w in singular_s:
-        if lower.endswith(w + 'es'):
+        if lower.endswith(f'{w}es'):
             return w
     for w in list(singular_irregular.keys()):
         if lower.endswith(w):
-            return re.sub('(?i)'+w+'$', singular_irregular[w], word)
+            return re.sub(f'(?i){w}$', singular_irregular[w], word)
 
     for rule in singular_rules:
         suffix, inflection = rule
-        match = suffix.search(word)
-        if match:
+        if match := suffix.search(word):
             groups = match.groups()
-            for k in range(0, len(groups)):
-                if groups[k] == None:
+            for k in range(len(groups)):
+                if groups[k] is None:
                     inflection = inflection.replace('\\'+str(k+1), '')
             return suffix.sub(inflection, word)
 

@@ -66,7 +66,7 @@ class DelimitedFormat(BaseFormat):
                                 encoding=DEFAULT_ENCODING)
         else:
             reader = csv.reader(fp, delimiter=self.delimiter)
-        self.data = [row for row in reader]
+        self.data = list(reader)
 
     def to_iterable(self):
         """Return an iterable object from the data."""

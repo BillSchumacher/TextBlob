@@ -121,11 +121,7 @@ def _calculate_tk(source):
     tkk = [406398, 561666268 + 1526272306]
     b = tkk[0]
 
-    if PY2:
-        d = map(ord, source)
-    else:
-        d = source.encode('utf-8')
-
+    d = map(ord, source) if PY2 else source.encode('utf-8')
     def RL(a, b):
         for c in range(0, len(b) - 2, 3):
             d = b[c + 2]
