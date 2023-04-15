@@ -15,9 +15,8 @@ def find_version(fname):
     with open(fname, 'r') as fp:
         reg = re.compile(r'__version__ = [\'"]([^\'"]*)[\'"]')
         for line in fp:
-            m = reg.match(line)
-            if m:
-                version = m.group(1)
+            if m := reg.match(line):
+                version = m[1]
                 break
     if not version:
         raise RuntimeError('Cannot find version information')

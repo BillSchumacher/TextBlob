@@ -25,8 +25,7 @@ PYPY = "PyPy" in sys.version
 
 def main():
     args = get_argv()
-    retcode = subprocess.call(['flake8', 'textblob'])
-    if retcode:
+    if retcode := subprocess.call(['flake8', 'textblob']):
         sys.exit(1)
     success = nose.run(argv=args)
     sys.exit(0) if success else sys.exit(1)
@@ -60,8 +59,7 @@ def get_argv():
     # Skip tests with the "skip" attribute
     attr_conditions.append("not skip")
 
-    attr_expression = " and ".join(attr_conditions)
-    if attr_expression:
+    if attr_expression := " and ".join(attr_conditions):
         args.extend(["-A", attr_expression])
     return args
 

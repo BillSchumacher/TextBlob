@@ -95,9 +95,10 @@ class UnicodeReader(object):
     def __init__(self, f, dialect=None, encoding='utf-8', errors='strict',
                  **kwds):
         format_params = ['delimiter', 'doublequote', 'escapechar', 'lineterminator', 'quotechar', 'quoting', 'skipinitialspace']
-        if dialect is None:
-            if not any([kwd_name in format_params for kwd_name in kwds.keys()]):
-                dialect = csv.excel
+        if dialect is None and all(
+            kwd_name not in format_params for kwd_name in kwds
+        ):
+            dialect = csv.excel
         self.reader = csv.reader(f, dialect, **kwds)
         self.encoding = encoding
         self.encoding_errors = errors
@@ -186,9 +187,12 @@ class DictReader(csv.DictReader):
 
     def next(self):
         row = csv.DictReader.next(self)
-        result = dict((uni_key, row[str_key]) for (str_key, uni_key) in
-                      izip(self.fieldnames, self.unicode_fieldnames))
-        rest = row.get(self.restkey)
-        if rest:
+        result = {
+            uni_key: row[str_key]
+            for (str_key, uni_key) in izip(
+                self.fieldnames, self.unicode_fieldnames
+            )
+        }
+        if rest := row.get(self.restkey):
             result[self.unicode_restkey] = rest
         return result

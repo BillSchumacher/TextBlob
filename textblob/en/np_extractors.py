@@ -59,7 +59,7 @@ class ConllExtractor(BaseNPExtractor):
     INSIGNIFICANT_SUFFIXES = ['DT', 'CC', 'PRP$', 'PRP']
 
     def __init__(self, parser=None):
-        self.parser = ChunkParser() if not parser else parser
+        self.parser = parser if parser else ChunkParser()
 
     def extract(self, text):
         '''Return a list of noun phrases (strings) for body of text.'''
@@ -129,8 +129,7 @@ class FastNPExtractor(BaseNPExtractor):
 
     def _tokenize_sentence(self, sentence):
         '''Split the sentence into single words/tokens'''
-        tokens = nltk.word_tokenize(sentence)
-        return tokens
+        return nltk.word_tokenize(sentence)
 
     def extract(self, sentence):
         '''Return a list of noun phrases (strings) for body of text.'''
@@ -142,22 +141,20 @@ class FastNPExtractor(BaseNPExtractor):
         merge = True
         while merge:
             merge = False
-            for x in range(0, len(tags) - 1):
+            for x in range(len(tags) - 1):
                 t1 = tags[x]
                 t2 = tags[x + 1]
                 key = t1[1], t2[1]
-                value = self.CFG.get(key, '')
-                if value:
+                if value := self.CFG.get(key, ''):
                     merge = True
                     tags.pop(x)
                     tags.pop(x)
-                    match = '%s %s' % (t1[0], t2[0])
+                    match = f'{t1[0]} {t2[0]}'
                     pos = value
                     tags.insert(x, (match, pos))
                     break
 
-        matches = [t[0] for t in tags if t[1] in ['NNP', 'NNI']]
-        return matches
+        return [t[0] for t in tags if t[1] in ['NNP', 'NNI']]
 
 
 ### Utility methods ###
@@ -168,7 +165,7 @@ def _normalize_tags(chunk):
     '''
     ret = []
     for word, tag in chunk:
-        if tag == 'NP-TL' or tag == 'NP':
+        if tag in ['NP-TL', 'NP']:
             ret.append((word, 'NNP'))
             continue
         if tag.endswith('-TL'):
@@ -191,8 +188,7 @@ def _is_match(tagged_phrase, cfg):
         for i in range(len(copy) - 1):
             first, second = copy[i], copy[i + 1]
             key = first[1], second[1]  # Tuple of tags e.g. ('NN', 'JJ')
-            value = cfg.get(key, None)
-            if value:
+            if value := cfg.get(key, None):
                 merge = True
                 copy.pop(i)
                 copy.pop(i)
@@ -200,5 +196,4 @@ def _is_match(tagged_phrase, cfg):
                 pos = value
                 copy.insert(i, (match, pos))
                 break
-    match = any([t[1] in ('NNP', 'NNI') for t in copy])
-    return match
+    return any(t[1] in ('NNP', 'NNI') for t in copy)

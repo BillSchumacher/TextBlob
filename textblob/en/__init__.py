@@ -57,11 +57,11 @@ class Sentiment(_Sentiment):
             for w, pos in list(dict.items(self)):
                 if "JJ" in pos:
                     if w.endswith("y"):
-                        w = w[:-1] + "i"
+                        w = f"{w[:-1]}i"
                     if w.endswith("le"):
                         w = w[:-2]
                     p, s, i = pos["JJ"]
-                    self.annotate(w + "ly", "RB", p, s, i)
+                    self.annotate(f"{w}ly", "RB", p, s, i)
 
 
 lexicon = Lexicon(
@@ -113,8 +113,7 @@ def tag(s, tokenize=True, encoding="utf-8"):
     """
     tags = []
     for sentence in parse(s, tokenize, True, False, False, False, encoding).split():
-        for token in sentence:
-            tags.append((token[0], token[1]))
+        tags.extend((token[0], token[1]) for token in sentence)
     return tags
 
 def suggest(w):

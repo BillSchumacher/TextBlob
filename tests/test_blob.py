@@ -65,7 +65,7 @@ class WordListTest(TestCase):
         assert_true(isinstance(first, tb.Word))
         assert_equal(first, 'Beautiful')
 
-        dogs = wl[0:2]
+        dogs = wl[:2]
         assert_true(isinstance(dogs, tb.WordList))
         assert_equal(dogs, tb.WordList(['Beautiful', 'is']))
 
@@ -523,7 +523,7 @@ is managed by the non-profit Python Software Foundation.'''
     def test_getitem(self):
         blob = tb.TextBlob('lorem ipsum')
         assert_equal(blob[0], 'l')
-        assert_equal(blob[0:5], tb.TextBlob('lorem'))
+        assert_equal(blob[:5], tb.TextBlob('lorem'))
 
     def test_upper(self):
         blob = tb.TextBlob('lorem ipsum')
@@ -655,8 +655,7 @@ is managed by the non-profit Python Software Foundation.'''
         # Can add two text blobs
         assert_equal(blob1 + blob2, tb.TextBlob('Hello, world! Hola mundo!'))
         # Can also add a string to a tb.TextBlob
-        assert_equal(blob1 + 'Hola mundo!',
-                     tb.TextBlob('Hello, world! Hola mundo!'))
+        assert_equal(f'{blob1}Hola mundo!', tb.TextBlob('Hello, world! Hola mundo!'))
         # Or both
         assert_equal(blob1 + blob2 + ' Goodbye!',
                      tb.TextBlob('Hello, world! Hola mundo! Goodbye!'))
@@ -903,7 +902,7 @@ class WordTest(TestCase):
     def test_has_str_methods(self):
         assert_equal(self.cat.upper(), "CAT")
         assert_equal(self.cat.lower(), "cat")
-        assert_equal(self.cat[0:2], 'ca')
+        assert_equal(self.cat[:2], 'ca')
 
     @mock.patch('textblob.translate.Translator.translate')
     def test_translate(self, mock_translate):
